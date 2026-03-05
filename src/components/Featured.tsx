@@ -1,7 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { supabase } from '../lib/supabase';
 import { ListingCard } from './ListingCard';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export const Featured: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -9,15 +12,16 @@ export const Featured: React.FC = () => {
   const [featuredListings, setFeaturedListings] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchFeatured = async () => {
+    const fetchLatest = async () => {
       const { data } = await supabase
         .from('listings')
         .select('*')
         .eq('status', 'approved')
-        .or('is_featured.eq.true,is_sponsored.eq.true');
+        .order('created_at', { ascending: false })
+        .limit(10);
       if (data) setFeaturedListings(data);
     };
-    fetchFeatured();
+    fetchLatest();
   }, []);
 
   useEffect(() => {
@@ -27,16 +31,15 @@ export const Featured: React.FC = () => {
       const scrollElement = scrollRef.current;
       if (!scrollElement) return;
 
-      const totalWidth = scrollElement.scrollWidth / 2;
+      // Calculate total width of one set of items
+      const itemWidth = 400 + 24; // 400px width + 24px gap
+      const totalWidth = itemWidth * featuredListings.length;
       
       gsap.to(scrollElement, {
         x: -totalWidth,
-        duration: 20,
+        duration: 40, // Slower speed
         ease: 'none',
         repeat: -1,
-        modifiers: {
-          x: gsap.utils.unitize((x) => parseFloat(x) % totalWidth)
-        }
       });
 
       scrollElement.addEventListener('mouseenter', () => gsap.globalTimeline.pause());

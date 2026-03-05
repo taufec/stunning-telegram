@@ -12,6 +12,8 @@ import { Pricing } from './components/Pricing';
 import { Footer } from './components/Footer';
 import { Auth } from './components/Auth';
 import { SubmitForm } from './components/SubmitForm';
+import { Profile } from './components/Profile';
+import { EditListing } from './components/EditListing';
 
 const Home = () => {
   return (
@@ -31,7 +33,7 @@ const Home = () => {
 
 const SubmitPage = () => {
   return (
-    <main className="min-h-screen bg-obsidian text-ivory selection:bg-champagne selection:text-obsidian relative">
+    <main className="min-h-screen bg-ivory text-obsidian selection:bg-champagne selection:text-obsidian relative">
       <div className="noise-overlay" />
       <Navbar />
       <SubmitForm />
@@ -67,6 +69,32 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <SubmitPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <main className="min-h-screen bg-ivory text-obsidian selection:bg-champagne selection:text-obsidian relative">
+                  <div className="noise-overlay" />
+                  <Navbar />
+                  <Profile />
+                  <Footer />
+                </main>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/edit/:id"
+            element={
+              <ProtectedRoute>
+                <main className="min-h-screen bg-ivory text-obsidian selection:bg-champagne selection:text-obsidian relative">
+                  <div className="noise-overlay" />
+                  <Navbar />
+                  <EditListing />
+                  <Footer />
+                </main>
               </ProtectedRoute>
             }
           />
