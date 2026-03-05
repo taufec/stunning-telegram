@@ -1,19 +1,21 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import imageCompression from 'browser-image-compression';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { ListingCard } from './ListingCard';
-import { CheckCircle2, ChevronRight, ChevronLeft, Upload } from 'lucide-react';
+import { CheckCircle2, ChevronRight, ChevronLeft, Upload, ArrowLeft } from 'lucide-react';
 
 const CATEGORIES = ['Education', 'Fintech', 'SaaS', 'Content', 'Marketing', 'Infra', 'Healthcare', 'Media', 'Agritech', 'AI / ML', 'E-commerce', 'Others'];
 const DISTRICT_OPTIONS = ['Kota Setar', 'Kubang Pasu', 'Kulim', 'Langkawi', 'Baling', 'Sik', 'Padang Terap', 'Pendang', 'Yan', 'Bandar Baharu', 'Pokok Sena'];
 
-export const SubmitForm: React.FC = () => {
+export const EditListing: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
@@ -34,6 +36,43 @@ export const SubmitForm: React.FC = () => {
   const [projectFile, setProjectFile] = useState<File | null>(null);
   const [projectPreview, setProjectPreview] = useState<string | null>(null);
 
+  useEffect(() => {
+    const fetchListing = async () => {
+      if (!user || !id) return;
+
+      const { data, error } = await supabase
+        .from('listings')
+        .select('*')
+        .eq('id', id)
+        .eq('submitted_by', user.id)
+        .single();
+
+      if (error || !data) {
+        setError('Listing not found or you do not have permission to edit it.');
+        setLoading(false);
+        return;
+      }
+
+      setFormData({
+        name: data.name || '',
+        tagline: data.tagline || '',
+        category: data.category || CATEGORIES[0],
+        district: data.district || DISTRICT_OPTIONS[0],
+        description: data.description || '',
+        website_url: data.website_url || '',
+        instagram_url: data.instagram_url || '',
+        tiktok_url: data.tiktok_url || '',
+        linkedin_url: data.linkedin_url || '',
+      });
+
+      setLogoPreview(data.logo_url);
+      setProjectPreview(data.project_image_url);
+      setLoading(false);
+    };
+
+    fetchListing();
+  }, [id, user]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -43,19 +82,18 @@ export const SubmitForm: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       
-      setLoading(true);
+      setSubmitting(true);
       setError(null);
 
       try {
         const options = {
-          maxSizeMB: 0.5, // Compress to under 500KB
+          maxSizeMB: 0.5,
           maxWidthOrHeight: 1024,
           useWebWorker: true,
         };
 
         const compressedFile = await imageCompression(file, options);
         
-        // Convert Blob to File
         const finalFile = new File([compressedFile], file.name, {
           type: file.type,
           lastModified: Date.now(),
@@ -72,19 +110,19 @@ export const SubmitForm: React.FC = () => {
         console.error('Compression error:', err);
         setError('Failed to process image. Please try another one.');
       } finally {
-        setLoading(false);
+        setSubmitting(false);
       }
     }
   };
 
   const handleSubmit = async () => {
-    if (!user) return;
-    setLoading(true);
+    if (!user || !id) return;
+    setSubmitting(true);
     setError(null);
 
     try {
-      let logo_url = null;
-      let project_image_url = null;
+      let logo_url = logoPreview;
+      let project_image_url = projectPreview;
 
       if (logoFile) {
         const fileExt = logoFile.name.split('.').pop();
@@ -122,25 +160,34 @@ export const SubmitForm: React.FC = () => {
         project_image_url = publicUrl;
       }
 
-      const { error: insertError } = await supabase.from('listings').insert([
-        {
+      const { error: updateError } = await supabase
+        .from('listings')
+        .update({
           ...formData,
           logo_url,
           project_image_url,
-          submitted_by: user.id,
-          status: 'pending',
-        },
-      ]);
+          status: 'pending', // Re-review after edit
+        })
+        .eq('id', id)
+        .eq('submitted_by', user.id);
 
-      if (insertError) throw insertError;
+      if (updateError) throw updateError;
 
       setSuccess(true);
     } catch (err: any) {
-      setError(err.message || 'An error occurred during submission.');
+      setError(err.message || 'An error occurred during update.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-ivory">
+        <div className="w-12 h-12 border-4 border-obsidian/10 border-t-champagne rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (success) {
     return (
@@ -149,15 +196,15 @@ export const SubmitForm: React.FC = () => {
           <div className="w-20 h-20 bg-champagne/20 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle2 size={40} className="text-champagne" />
           </div>
-          <h2 className="text-3xl font-bold text-obsidian mb-4">Listing Submitted</h2>
+          <h2 className="text-3xl font-bold text-obsidian mb-4">Listing Updated</h2>
           <p className="text-obsidian/60 mb-8">
-            Your listing is under review. We'll notify you once it's live on the directory.
+            Your changes have been saved and are under review. We'll notify you once it's live.
           </p>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/profile')}
             className="px-8 py-4 bg-champagne text-obsidian rounded-full font-bold btn-magnetic w-full"
           >
-            Return to Directory
+            Return to Profile
           </button>
         </div>
       </div>
@@ -167,12 +214,19 @@ export const SubmitForm: React.FC = () => {
   return (
     <div className="min-h-screen bg-ivory pt-40 pb-24 px-6 md:px-12 lg:px-24">
       <div className="max-w-4xl mx-auto">
+        <button
+          onClick={() => navigate('/profile')}
+          className="flex items-center gap-2 text-obsidian/60 hover:text-champagne transition-colors mb-8"
+        >
+          <ArrowLeft size={18} /> Back to Profile
+        </button>
+
         <div className="mb-12">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-obsidian mb-4">
-            Put your work on the map.
+            Edit your listing.
           </h1>
           <p className="text-obsidian/60 text-lg">
-            Submit your tech company, project, or community to the Kedah directory.
+            Update your project details. Note: Editing will set the status back to pending for review.
           </p>
         </div>
 
@@ -435,10 +489,10 @@ export const SubmitForm: React.FC = () => {
             ) : (
               <button
                 onClick={handleSubmit}
-                disabled={loading}
+                disabled={submitting}
                 className="flex items-center gap-2 px-8 py-3 bg-champagne text-obsidian rounded-full font-bold btn-magnetic disabled:opacity-50"
               >
-                {loading ? 'Submitting...' : 'Submit Listing'} <CheckCircle2 size={18} />
+                {submitting ? 'Updating...' : 'Update Listing'} <CheckCircle2 size={18} />
               </button>
             )}
           </div>

@@ -83,7 +83,7 @@ export const HowItWorks: React.FC = () => {
       {steps.map((step, i) => (
         <div
           key={step.id}
-          className="step-card h-screen w-full flex items-center justify-center sticky top-0 bg-obsidian border-t border-ivory/5"
+          className="step-card h-screen w-full flex items-center justify-center bg-obsidian border-t border-ivory/5"
           style={{ zIndex: i }}
         >
           <div className="max-w-6xl w-full px-6 md:px-12 lg:px-24 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
