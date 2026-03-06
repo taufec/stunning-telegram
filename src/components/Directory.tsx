@@ -3,12 +3,14 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { supabase } from '../lib/supabase';
 import { ListingCard } from './ListingCard';
+import { ListingModal } from './ListingModal';
+import { AnimatePresence } from 'framer-motion';
 import { ChevronDown, Filter, Search, ChevronRight } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const CATEGORIES = ['All', 'Education', 'Fintech', 'SaaS', 'Content', 'Marketing', 'Infra', 'Healthcare', 'Media', 'Agritech', 'AI / ML', 'E-commerce', 'Others'];
-const DISTRICT_OPTIONS = ['All Districts', 'Kota Setar', 'Kubang Pasu', 'Kulim', 'Langkawi', 'Baling', 'Sik', 'Padang Terap', 'Pendang', 'Yan', 'Bandar Baharu', 'Pokok Sena'];
+const DISTRICT_OPTIONS = ['All Districts', 'Kota Setar', 'Kubang Pasu', 'Kulim', 'Langkawi', 'Baling', 'Sik', 'Padang Terap', 'Pendang', 'Yan', 'Bandar Baharu', 'Pokok Sena', 'Kuala Muda'];
 const SORT_OPTIONS = ['Newest', 'A-Z', 'Featured First'];
 
 export const Directory: React.FC = () => {
@@ -20,6 +22,8 @@ export const Directory: React.FC = () => {
   const [sort, setSort] = useState('Newest');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  
+  const [selectedListing, setSelectedListing] = useState<any>(null);
   
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -207,11 +211,20 @@ export const Directory: React.FC = () => {
           <>
             <div ref={gridRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {listings.map((listing) => (
-                <div key={listing.id} className="listing-card-anim">
+                <div key={listing.id} className="listing-card-anim cursor-pointer" onClick={() => setSelectedListing(listing)}>
                   <ListingCard listing={listing} />
                 </div>
               ))}
             </div>
+
+            <AnimatePresence>
+              {selectedListing && (
+                <ListingModal 
+                  listing={selectedListing} 
+                  onClose={() => setSelectedListing(null)} 
+                />
+              )}
+            </AnimatePresence>
 
             {hasMore && (
               <div className="flex justify-center mt-16">

@@ -7,7 +7,7 @@ import { ListingCard } from './ListingCard';
 import { CheckCircle2, ChevronRight, ChevronLeft, Upload } from 'lucide-react';
 
 const CATEGORIES = ['Education', 'Fintech', 'SaaS', 'Content', 'Marketing', 'Infra', 'Healthcare', 'Media', 'Agritech', 'AI / ML', 'E-commerce', 'Others'];
-const DISTRICT_OPTIONS = ['Kota Setar', 'Kubang Pasu', 'Kulim', 'Langkawi', 'Baling', 'Sik', 'Padang Terap', 'Pendang', 'Yan', 'Bandar Baharu', 'Pokok Sena'];
+const DISTRICT_OPTIONS = ['Kota Setar', 'Kubang Pasu', 'Kulim', 'Langkawi', 'Baling', 'Sik', 'Padang Terap', 'Pendang', 'Yan', 'Bandar Baharu', 'Pokok Sena', 'Kuala Muda'];
 
 export const SubmitForm: React.FC = () => {
   const { user } = useAuth();
