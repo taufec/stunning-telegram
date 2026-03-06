@@ -8,6 +8,7 @@ import { twMerge } from 'tailwind-merge';
 export const Navbar: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -17,6 +18,15 @@ export const Navbar: React.FC = () => {
     setMobileMenuOpen(false);
     setDesktopMenuOpen(false);
   }, [location.pathname]);
+
+  // Handle scroll for shrinking navbar
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -31,37 +41,45 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
-      <div className="relative pointer-events-auto w-full max-w-5xl">
-        {/* Green shadow/offset pill */}
-        <motion.div 
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="absolute inset-0 bg-[#00FF66] rounded-full translate-y-2 translate-x-1" 
-        />
-        
-        {/* Main dark pill */}
+      <div className={twMerge(
+        "relative pointer-events-auto transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] mx-auto",
+        isScrolled ? "w-full md:max-w-[470px]" : "w-full max-w-5xl"
+      )}>
+        {/* Main glass pill */}
         <motion.nav 
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className="relative bg-[#141414] rounded-full px-6 md:px-8 py-3 flex items-center justify-between border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
+          className={twMerge(
+            "relative bg-black/40 backdrop-blur-md rounded-full flex items-center justify-between border border-white/20 shadow-[0_0_20px_rgba(255,255,255,0.15)] transition-all duration-500",
+            isScrolled ? "p-3" : "px-6 md:px-8 py-3"
+          )}
         >
           {/* Logo - Enlarged 1.3x (from h-10 to h-[52px]) */}
-          <Link to="/" className="flex items-center gap-2 group relative z-50">
-            <img src="/logo.png" alt="Kedah Tech Logo" className="h-[52px] object-contain transition-transform duration-300 group-hover:scale-105" />
+          <Link to="/" className="flex items-center gap-2 group relative z-50 shrink-0">
+            <img 
+              src={isScrolled ? "/logo2.png" : "/logo.png"} 
+              alt="Kedah Tech Logo" 
+              className="h-[52px] object-contain transition-transform duration-300 group-hover:scale-105" 
+            />
           </Link>
 
           {/* Desktop Links */}
-          <div className="hidden md:flex items-center gap-8 absolute left-1/2 -translate-x-1/2">
+          <div className="hidden md:flex items-center gap-6 absolute left-1/2 -translate-x-1/2">
             {navLinks.map((link) => {
-              const isActive = location.pathname === link.path;
+              const isActive = location.pathname === link.path && link.path !== '/';
               return (
                 <Link
                   key={link.name}
                   to={link.path}
+                  onClick={(e) => {
+                    if (link.name.toLowerCase() === 'discover' && location.pathname === '/') {
+                      e.preventDefault();
+                      document.getElementById('directory')?.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
                   className={twMerge(
-                    "relative text-sm font-medium tracking-wide transition-colors px-2 py-1",
+                    "relative text-base font-bold uppercase tracking-wider transition-colors px-2 py-1",
                     isActive ? "text-[#00FF66]" : "text-white/70 hover:text-white"
                   )}
                 >
@@ -77,12 +95,18 @@ export const Navbar: React.FC = () => {
               <div className="relative">
                 <button
                   onClick={() => setDesktopMenuOpen(!desktopMenuOpen)}
-                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-4 py-2 rounded-full transition-colors"
+                  className={twMerge(
+                    "flex items-center justify-center bg-[#00FF66] hover:bg-[#00cc52] text-black rounded-full text-sm font-bold transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] shadow-[0_0_20px_rgba(0,255,102,0.2)]",
+                    isScrolled ? "px-5 py-2 gap-2 md:w-[52px] md:h-[52px] md:p-0 md:gap-0" : "px-6 h-[52px] gap-2"
+                  )}
                 >
-                  <div className="w-6 h-6 rounded-full bg-[#00FF66]/20 flex items-center justify-center text-[#00FF66]">
-                    <User size={14} fill="currentColor" />
+                  <div className="shrink-0 flex items-center justify-center">
+                    <User size={isScrolled ? 24 : 16} fill="currentColor" className="transition-all duration-500" />
                   </div>
-                  <span className="text-sm font-medium text-white">Account</span>
+                  <span className={twMerge(
+                    "overflow-hidden whitespace-nowrap transition-all duration-500",
+                    isScrolled ? "max-w-[100px] opacity-100 md:max-w-0 md:opacity-0" : "max-w-[100px] opacity-100"
+                  )}>Account</span>
                 </button>
 
                 <AnimatePresence>
@@ -118,10 +142,18 @@ export const Navbar: React.FC = () => {
             ) : (
               <Link
                 to="/auth"
-                className="flex items-center gap-2 bg-[#00FF66] hover:bg-[#00cc52] text-black px-5 py-2 rounded-full text-sm font-bold transition-colors shadow-[0_0_20px_rgba(0,255,102,0.2)]"
+                className={twMerge(
+                  "flex items-center justify-center bg-[#00FF66] hover:bg-[#00cc52] text-black rounded-full text-sm font-bold transition-all duration-500 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] shadow-[0_0_20px_rgba(0,255,102,0.2)]",
+                  isScrolled ? "px-5 py-2 gap-2 md:w-[52px] md:h-[52px] md:p-0 md:gap-0" : "px-6 h-[52px] gap-2"
+                )}
               >
-                <User size={16} fill="currentColor" />
-                Sign In
+                <div className="shrink-0 flex items-center justify-center">
+                  <User size={isScrolled ? 24 : 16} fill="currentColor" className="transition-all duration-500" />
+                </div>
+                <span className={twMerge(
+                  "transition-all duration-500 overflow-hidden whitespace-nowrap",
+                  isScrolled ? "max-w-[100px] opacity-100 md:max-w-0 md:opacity-0" : "max-w-[100px] opacity-100"
+                )}>Sign In</span>
               </Link>
             )}
           </div>
@@ -165,6 +197,13 @@ export const Navbar: React.FC = () => {
                   >
                     <Link
                       to={link.path}
+                      onClick={(e) => {
+                        if (link.name.toLowerCase() === 'discover' && location.pathname === '/') {
+                          e.preventDefault();
+                          document.getElementById('directory')?.scrollIntoView({ behavior: 'smooth' });
+                        }
+                        setMobileMenuOpen(false);
+                      }}
                       className="flex items-center justify-between py-4 text-2xl font-medium text-white hover:text-[#00FF66] transition-colors border-b border-white/5"
                     >
                       {link.name}

@@ -4,7 +4,6 @@ import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navbar } from './components/Navbar';
 import { Hero } from './components/Hero';
-import { Featured } from './components/Featured';
 import { Directory } from './components/Directory';
 import { Manifesto } from './components/Manifesto';
 import { HowItWorks } from './components/HowItWorks';
@@ -14,14 +13,13 @@ import { Auth } from './components/Auth';
 import { SubmitForm } from './components/SubmitForm';
 import { Profile } from './components/Profile';
 import { EditListing } from './components/EditListing';
+import { ScrollToTop } from './components/ScrollToTop';
 
 const Home = () => {
   return (
     <main className="min-h-screen bg-obsidian text-ivory selection:bg-champagne selection:text-obsidian relative">
-      <div className="noise-overlay" />
       <Navbar />
       <Hero />
-      <Featured />
       <Directory />
       <HowItWorks />
       <Manifesto />
@@ -34,7 +32,6 @@ const Home = () => {
 const SubmitPage = () => {
   return (
     <main className="min-h-screen bg-ivory text-obsidian selection:bg-champagne selection:text-obsidian relative">
-      <div className="noise-overlay" />
       <Navbar />
       <SubmitForm />
       <Footer />
@@ -45,7 +42,6 @@ const SubmitPage = () => {
 const PricingPage = () => {
   return (
     <main className="min-h-screen bg-obsidian text-ivory selection:bg-champagne selection:text-obsidian relative">
-      <div className="noise-overlay" />
       <Navbar />
       <div className="pt-24">
         <Pricing />
@@ -59,6 +55,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/auth" element={<Auth />} />
@@ -77,7 +74,6 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <main className="min-h-screen bg-ivory text-obsidian selection:bg-champagne selection:text-obsidian relative">
-                  <div className="noise-overlay" />
                   <Navbar />
                   <Profile />
                   <Footer />
@@ -90,7 +86,6 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <main className="min-h-screen bg-ivory text-obsidian selection:bg-champagne selection:text-obsidian relative">
-                  <div className="noise-overlay" />
                   <Navbar />
                   <EditListing />
                   <Footer />
