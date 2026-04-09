@@ -39,22 +39,69 @@ export const Hero: React.FC = () => {
         paddedData = Array(7).fill(mock).map((m, i) => ({ ...m, id: `mock-${i}` }));
       }
       setListings(paddedData.slice(0, 7));
-      
-      // Prevent initial fly-through animation
-      setTimeout(() => {
-        setIsInitialized(true);
-      }, 100);
     };
     fetchListings();
   }, []);
 
   useEffect(() => {
     if (listings.length === 0) return;
-    const interval = setInterval(() => {
-      setActiveIndex((current) => (current + 1) % listings.length);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, [listings]);
+    
+    let interval: NodeJS.Timeout;
+    let initTimer: NodeJS.Timeout;
+    let moveTimer: NodeJS.Timeout;
+    let visibilityTimer: NodeJS.Timeout;
+    let visibilityMoveTimer: NodeJS.Timeout;
+
+    const startSliding = () => {
+      clearInterval(interval);
+      interval = setInterval(() => {
+        setActiveIndex((current) => (current + 1) % listings.length);
+      }, 6000);
+    };
+
+    // 1. Wait for the browser to fully paint the initial static positions (transition: none)
+    initTimer = setTimeout(() => {
+      setIsInitialized(true);
+      
+      // 2. Wait a tiny bit more to ensure the transition property is updated
+      // before we trigger the first movement
+      moveTimer = setTimeout(() => {
+        setActiveIndex(1);
+        startSliding();
+      }, 50);
+    }, 200);
+
+    // Handle tab switching to prevent wild catch-up animations
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        clearInterval(interval);
+      } else {
+        // Tab is active again. Disable transitions briefly to snap cards 
+        // to their current positions without flying across the screen.
+        setIsInitialized(false);
+        clearInterval(interval);
+        
+        visibilityTimer = setTimeout(() => {
+          setIsInitialized(true);
+          visibilityMoveTimer = setTimeout(() => {
+            setActiveIndex((current) => (current + 1) % listings.length);
+            startSliding();
+          }, 50);
+        }, 50);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      clearTimeout(initTimer);
+      clearTimeout(moveTimer);
+      clearTimeout(visibilityTimer);
+      clearTimeout(visibilityMoveTimer);
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [listings.length]);
 
   const getPositionStyle = (index: number) => {
     if (listings.length === 0) return {};
@@ -106,7 +153,12 @@ export const Hero: React.FC = () => {
       {/* Headlines */}
       <div className="text-center z-10 max-w-5xl mx-auto my-12 relative">
         <h1 className="text-4xl sm:text-5xl md:text-7xl lg:text-[5.5rem] font-black tracking-tighter text-white leading-[1.1] md:leading-[0.9] uppercase">
-          Homegrown Kedah<br />Tech Directory
+          <span className="block lg:hidden">
+            Homegrown<br />Kedah&nbsp;&nbsp;Tech<br />Directory
+          </span>
+          <span className="hidden lg:block">
+            Homegrown&nbsp;&nbsp;Kedah<br />Tech&nbsp;&nbsp;Directory
+          </span>
         </h1>
         
         <h2 className="text-2xl md:text-4xl lg:text-[2.75rem] font-light text-white/80 mt-8 leading-tight">
